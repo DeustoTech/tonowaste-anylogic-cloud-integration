@@ -1,0 +1,12 @@
+{
+  "model_id": "1ba2f2f6-7c7f-4067-885a-441bb0bd5d03",
+  "model_name_fallbacks": ["Service System Demo", "Service Systems Demo"],
+  "experiment": "Baseline",
+  "inputs": {
+    "Server capacity": 8
+  },
+  "outputs": [
+    "Mean queue size|Mean queue size",
+    "Utilization|Server utilization"
+  ]
+}

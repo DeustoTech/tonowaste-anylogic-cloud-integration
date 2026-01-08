@@ -1,0 +1,6 @@
+{
+  "_http_client": "<class 'anylogiccloudclient.client.http_client.HttpClient'>",
+  "_model_version": "<class 'anylogiccloudclient.data.model_version.ModelVersion'>",
+  "outputs": "<class 'list'>",
+  "inputs_array": "<class 'list'>"
+}
