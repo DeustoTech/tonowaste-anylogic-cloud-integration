@@ -1,13 +1,12 @@
-# Documentación: inspect_anylogic_model.py
+# Inspeccionar Modelos AnyLogic Cloud
 
-## 📋 Resumen General
-Script de utilidad para **inspeccionar y documentar modelos de simulación alojados en AnyLogic Cloud**. Extrae automáticamente:
-- **Inputs disponibles** (parámetros de entrada del modelo)
-- **Outputs disponibles** (resultados/métricas de salida del modelo)
-- **Esquema del modelo** (estructura y relaciones entre inputs/outputs)
-- **Valores de ejemplo** (ejecución de una simulación de prueba)
+## 📋 Resumen
 
-El script genera archivos JSON que documentan la estructura del modelo para su posterior uso en aplicaciones que necesiten interactuar con modelos de AnyLogic.
+Script de **inspección automática** para descubrir inputs y outputs de cualquier modelo en AnyLogic Cloud. Ejecuta una simulación de prueba y genera un esquema JSON con la estructura completa del modelo.
+
+**Propósito:** Descubrir qué parámetros y resultados tiene un modelo sin acceder manualmente a la interfaz web
+
+**Estado:** ✅ Production-ready para investigación
 
 ---
 

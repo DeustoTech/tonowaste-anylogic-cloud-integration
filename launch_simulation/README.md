@@ -1,14 +1,12 @@
-# Documentación: launch_simulation.py
+# Lanzador de Simulaciones (Launch Simulation)
 
-## 📋 Resumen General
-Script de **lanzamiento automático de simulaciones en AnyLogic Cloud** con configuración vía archivo JSON. A diferencia de `test_cloud.py` (ejemplo simple), este script es **production-ready** porque:
-- Lee toda la configuración desde un archivo `config.json`
-- Soporta configuración de **múltiples inputs** de una sola vez
-- Extrae **outputs específicos** solicitados en config
-- Valida que todos los outputs requeridos se hayan capturado (modo strict)
-- Genera CSV con **solo los outputs solicitados** (no ruido)
+## 📋 Resumen
 
-Es la versión **parametrizable y reutilizable** del lanzador de simulaciones.
+Script de **automatización genérica** para ejecutar simulaciones en AnyLogic Cloud usando configuración vía JSON. Produce resultados reproducibles y parametrizables.
+
+**Propósito:** Ejecutar simulaciones automáticamente con diferentes modelos y parámetros sin cambiar código
+
+**Estado:** ✅ Production-ready
 
 ---
 
@@ -143,12 +141,15 @@ with csv_path.open("w", newline="", encoding="utf-8") as f:
 
 ## 📁 Archivos de Entrada
 
-### `.env` (obligatorio)
+### `.env` (obligatorio, en directorio raíz)
+
 ```
 ANYLOGIC_API_KEY=eyJ0eXAiOiJKV1QiLCJhbGc...
 ```
 
-### `config.json` (obligatorio, debe estar en mismo directorio)
+Crear en: `../.env` (uno nivel arriba de este directorio)
+
+### `config.json` (obligatorio, en directorio raíz)
 ```json
 {
   "model_id": "1ba2f2f6-7c7f-4067-885a-441bb0bd5d03",
@@ -209,14 +210,15 @@ Average delay|Average delay,1.25
 pip install anylogic-cloud-client
 ```
 
-### 2. **Crear `.env`**
+### 2. **Crear `.env` (en raíz del proyecto)**
 ```bash
-cat > .env <<EOF
-ANYLOGIC_API_KEY=tu_clave_api_aqui
-EOF
+echo "ANYLOGIC_API_KEY=tu_clave_api_aqui" > ../.env
 ```
 
-### 3. **Crear `config.json`** (ejemplo minimalista)
+### 3. **Crear `config.json` (en raíz del proyecto)**
+
+Ejemplo minimalista:
+
 ```json
 {
   "model_id": "abc123-def456",
@@ -233,6 +235,8 @@ EOF
 }
 ```
 
+Guardar en: `../config.json`
+
 ### 4. **Ejecutar**
 ```bash
 python launch_simulation.py
@@ -241,7 +245,7 @@ python launch_simulation.py
 ### 5. **Salida esperada en terminal**
 ```
 AnyLogic API key cargada (prefijo): eyJ0eXAi...
-Configuración cargada desde config.json
+Configuración cargada desde ../config.json
 Modelo ID: abc123-def456
 Experimento: Baseline
 Usando experimento: Baseline
@@ -262,9 +266,11 @@ Simulación completada.
 - System utilization: 0.87
 ==========================================
 
-Guardado (outputs explícitos): /ruta/a/resultados.csv
+Guardado (outputs explícitos): ../resultados.csv
 Ejecución finalizada.
 ```
+
+Nota: `resultados.csv` se genera en el **directorio raíz** del proyecto (no en esta carpeta)
 
 ---
 
@@ -523,12 +529,16 @@ cat model_schema.json | grep outputs
 Continúa aunque no encuentre algunos outputs (útil para debugging)
 
 ### 3. **Múltiples simulaciones**
-Crea varios `config.json` (p. ej., `config_scenario1.json`, `config_scenario2.json`) y ejecuta:
+
+Crea varios `config*.json` en raíz del proyecto y ejecuta:
+
 ```bash
-for config in config_*.json; do
-  cp "$config" config.json
+cd launch_simulation
+
+for config in ../config_*.json; do
+  cp "$config" ../config.json
   python launch_simulation.py
-  mv resultados.csv "resultados_$(basename $config .json).csv"
+  mv ../resultados.csv "../resultados_$(basename $config .json).csv"
 done
 ```
 
@@ -536,6 +546,38 @@ done
 ```bash
 python launch_simulation.py 2>&1 | head -20
 ```
+
+---
+
+## 🔗 Flujo Recomendado
+
+```
+1. Obtener UUID del modelo
+   → https://cloud.anylogic.com/models
+   
+2. Inspeccionar modelo
+   → cd ../inspect_anycloud_model
+   → python inspect_anylogic_model.py
+   → Ver model_schema.json
+   
+3. Crear config.json en raíz con nombres exactos
+   
+4. Ejecutar desde esta carpeta
+   → python launch_simulation.py
+   
+5. Ver resultados.csv en raíz del proyecto
+```
+
+---
+
+## 📚 Documentación Completa
+
+Ver [../README.md](../README.md) para contexto general del proyecto
+
+---
+
+**Última actualización:** Enero 2026  
+**Estado:** Production-ready
 
 ---
 

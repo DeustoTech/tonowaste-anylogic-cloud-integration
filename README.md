@@ -12,40 +12,19 @@ Suite completa de Python para **automatizar simulaciones en AnyLogic Cloud** de 
 
 ## 🎯 Evolución de la Solución
 
-### Fase 1: Prueba Inicial (`test_cloud.py`)
+### Fase 1: Prueba Inicial (`test_cloud/test_cloud.py`)
 
 **Objetivo:** Validar que la integración con AnyLogic Cloud funciona
 
-```python
-# ❌ Problema: Hardcoded, no reutilizable
-- Modelo fijo: "Service System Demo"
-- Un parámetro modificado manualmente
-- CSV con todos los outputs (ruido)
-- Para cada modelo nuevo, editar código
-```
-
-**Resultado:** `resultados_serviceSystemDemo.csv`
+Ver: [test_cloud/README.md](test_cloud/README.md)
 
 ---
 
-### Fase 2: Inspección de Modelos (`inspect_anylogic_model.py`)
+### Fase 2: Inspección de Modelos (`inspect_anycloud_model/inspect_anylogic_model.py`)
 
 **Objetivo:** Descubrir automáticamente inputs y outputs de cualquier modelo
 
-```
-Script interactivo que:
-✅ Lee credenciales desde .env
-✅ Conecta con AnyLogic Cloud
-✅ Identifica modelo por ID o nombre
-✅ Enumera inputs disponibles
-✅ Ejecuta simulación de prueba
-✅ Extrae y documenta outputs
-✅ Genera JSON de esquema
-```
-
-**Salida:** `model_schema.json`, archivos de introspección
-
-**Ventaja:** Ahora sabemos exactamente qué parámetros y resultados tiene cada modelo
+Ver: [inspect_anycloud_model/README.md](inspect_anycloud_model/README.md)
 
 ---
 
@@ -78,58 +57,47 @@ Script interactivo que:
 
 ---
 
-### Fase 4: Automatización Genérica (`launch_simulation.py`)
+### Fase 4: Automatización Genérica (`launch_simulation/launch_simulation.py`)
 
 **Objetivo:** Script universal que funciona con cualquier config.json
 
-```
-launch_simulation.py:
-✅ Lee config.json
-✅ Autentica con AnyLogic Cloud
-✅ Busca modelo (ID o fallback names)
-✅ Configura múltiples inputs
-✅ Ejecuta simulación
-✅ Captura outputs solicitados
-✅ Valida completitud (strict mode)
-✅ Guarda resultados en CSV
-```
-
-**Resultado:** `resultados.csv` (solo outputs solicitados)
-
-**Ventaja:** Script único para todos los modelos. Solo cambias `config.json`
+Ver: [launch_simulation/README.md](launch_simulation/README.md)
 
 ---
 
-## 📁 Estructura de Archivos
+## 📁 Estructura de Archivos Principales
 
 ```
 Anycloud/
-├── README.md                           # Este archivo
-├── .env                                # Credenciales (no versionado)
-│   └── ANYLOGIC_API_KEY=xxx
+├── README.md                                    # Este archivo (guía general)
+├── .env                                        # Credenciales (no versionado)
 │
-├── Scripts de Automatización
-├── ├── test_cloud.py                   # ❌ Legacy (no usar)
-├── ├── inspect_anylogic_model.py       # 🔍 Inspeccionar modelos
-├── └── launch_simulation.py            # 🚀 Lanzar simulaciones (PRINCIPAL)
+├── test_cloud/
+│   ├── README.md                              # 📖 Documentación
+│   └── test_cloud.py                          # ❌ Legacy (debugging solo)
+│
+├── inspect_anycloud_model/
+│   ├── README.md                              # 📖 Documentación
+│   └── inspect_anylogic_model.py              # 🔍 Inspeccionar modelos
+│
+├── launch_simulation/
+│   ├── README.md                              # 📖 Documentación
+│   └── launch_simulation.py                   # 🚀 Lanzador (PRINCIPAL)
 │
 ├── Configuración
-├── ├── config.json                     # Config Bass Diffusion Demo
-├── └── config2.json                    # Config Service System Demo
-│
-├── Documentación
-├── ├── DOCUMENTACION_inspect_anylogic_model.md
-├── ├── DOCUMENTACION_launch_simulation.md
-├── ├── DOCUMENTACION_test_cloud.md
+│   ├── config.json                            # Config Bass Diffusion Demo
+│   └── config2.json                           # Config Service System Demo
 │
 ├── Salidas
-├── ├── resultados.csv                  # Última ejecución
-├── ├── resultados_serviceSystemDemo.csv # Legacy
-├── ├── model_schema.json               # Esquema inspeccionado
-├── └── *.json                          # Archivos auxiliares
+│   ├── resultados.csv                         # Última ejecución
+│   ├── resultados_serviceSystemDemo.csv       # Legacy
+│   ├── model_schema.json                      # Esquema inspeccionado
+│   └── *.json                                 # Archivos auxiliares
 │
-└── Dependencias
-    └── requirements.txt                # pip install -r requirements.txt
+└── Documentación Detallada
+    ├── DOCUMENTACION_test_cloud.md
+    ├── DOCUMENTACION_inspect_anylogic_model.md
+    └── DOCUMENTACION_launch_simulation.md
 ```
 
 ---
@@ -142,10 +110,7 @@ Anycloud/
 # Clonar/descargar repositorio
 cd /home/oihane/00_ToNoWaste/Anycloud
 
-# Instalar dependencias
-pip install -r requirements.txt
-
-# O instalar manualmente:
+# Instalar manualmente:
 pip install anylogic-cloud-client
 ```
 
@@ -155,7 +120,7 @@ Crear archivo `.env` en el directorio (no versionado):
 
 ```bash
 cat > .env <<EOF
-ANYLOGIC_API_KEY=eyJ0eXAiOiJKV1QiLCJhbGc...
+ANYLOGIC_API_KEY=ey...
 EOF
 ```
 
@@ -165,14 +130,15 @@ Obtener API key: https://cloud.anylogic.com/settings/api-keys
 
 ```bash
 # Con Bass Diffusion Demo (config.json por defecto)
+cd launch_simulation
 python launch_simulation.py
 
-# Con Service System Demo
-cp config2.json config.json
+# O con Service System Demo
+cp ../config2.json ../config.json
 python launch_simulation.py
 
 # Ver resultados
-cat resultados.csv
+cat ../resultados.csv
 ```
 
 ### 4. Inspeccionar Nuevo Modelo
@@ -180,7 +146,7 @@ cat resultados.csv
 Si quieres trabajar con un modelo nuevo:
 
 ```bash
-# Ejecutar inspector (interactivo)
+cd inspect_anycloud_model
 python inspect_anylogic_model.py
 
 # Te pide: MODEL_ID o nombre del modelo
@@ -327,26 +293,28 @@ Utilization|Server utilization,0.31275860811685163
 
 ## 🔍 Scripts Detallados
 
-### `test_cloud.py` (⚠️ Legacy, no recomendado)
+### `test_cloud/` (⚠️ Legacy, no recomendado)
 
 **Propósito:** Prueba simple de integración (debugging)
 
-**Documentación:** [DOCUMENTACION_test_cloud.md](DOCUMENTACION_test_cloud.md)
+**Documentación:** [test_cloud/README.md](test_cloud/README.md)
 
 ```bash
+cd test_cloud
 python test_cloud.py
 # Genera: resultados_serviceSystemDemo.csv
 ```
 
 ---
 
-### `inspect_anylogic_model.py` (🔍 Investigación)
+### `inspect_anycloud_model/` (🔍 Investigación)
 
 **Propósito:** Descubrir estructura de nuevos modelos
 
-**Documentación:** [DOCUMENTACION_inspect_anylogic_model.md](DOCUMENTACION_inspect_anylogic_model.md)
+**Documentación:** [inspect_anycloud_model/README.md](inspect_anycloud_model/README.md)
 
 ```bash
+cd inspect_anycloud_model
 python inspect_anylogic_model.py
 
 # Salidas:
@@ -358,16 +326,17 @@ python inspect_anylogic_model.py
 
 ---
 
-### `launch_simulation.py` (🚀 Principal)
+### `launch_simulation/` (🚀 Principal)
 
 **Propósito:** Ejecutar simulaciones de forma genérica y parametrizable
 
-**Documentación:** [DOCUMENTACION_launch_simulation.md](DOCUMENTACION_launch_simulation.md)
+**Documentación:** [launch_simulation/README.md](launch_simulation/README.md)
 
 ```bash
+cd launch_simulation
 python launch_simulation.py
-# Lee: config.json
-# Genera: resultados.csv
+# Lee: ../config.json
+# Genera: ../resultados.csv
 ```
 
 ---
@@ -458,10 +427,10 @@ pip install anylogic-cloud-client
 
 ## 📚 Referencias y Documentación
 
-**Documentación de cada script:**
-- [DOCUMENTACION_test_cloud.md](DOCUMENTACION_test_cloud.md) - Script de prueba
-- [DOCUMENTACION_inspect_anylogic_model.md](DOCUMENTACION_inspect_anylogic_model.md) - Inspector de modelos
-- [DOCUMENTACION_launch_simulation.py](DOCUMENTACION_launch_simulation.md) - Lanzador principal
+**Documentación de cada módulo:**
+- [test_cloud/README.md](test_cloud/README.md) - Script de prueba
+- [inspect_anycloud_model/README.md](inspect_anycloud_model/README.md) - Inspector de modelos
+- [launch_simulation/README.md](launch_simulation/README.md) - Lanzador principal
 
 **Referencias externas:**
 - [AnyLogic Cloud Documentation](https://cloud.anylogic.com/docs)

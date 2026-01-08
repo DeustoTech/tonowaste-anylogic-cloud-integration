@@ -1,12 +1,12 @@
-# Documentación: test_cloud.py
+# Test Cloud - Prueba de Integración Inicial
 
-## 📋 Resumen General
-Script de **prueba y validación de integración con AnyLogic Cloud**. Ejecuta una simulación completa con un modelo en AnyLogic Cloud, modifica parámetros de entrada y captura los resultados en un archivo CSV. Es un ejemplo funcional de cómo:
-- Autenticarse con AnyLogic Cloud
-- Cargar un modelo específico
-- Modificar inputs (parámetros)
-- Ejecutar una simulación
-- Extraer y guardar outputs (resultados)
+## 📋 Resumen
+
+Script de **prueba simple** para validar que la integración con AnyLogic Cloud funciona correctamente. Ejecuta una simulación del modelo "Service System Demo", modifica un parámetro de prueba y captura los resultados en CSV.
+
+**Propósito:** Debugging y validación inicial de credenciales y conectividad
+
+**Estado:** ⚠️ Legacy - Ver [../launch_simulation/](../launch_simulation/README.md) para automatización
 
 ---
 
