@@ -1,1 +1,34 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# --- Environment & Secrets ---
+# NEVER track your API Keys or credentials
 .env
+.flaskenv
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# --- Project Specifics ---
+# Exclude local simulation results/logs
+outputs/*.csv
+outputs/*.json
+logs/
+*.log
+
+# --- IDEs & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Config Backups ---
+configs/* (Copy).json
+configs/*.bak

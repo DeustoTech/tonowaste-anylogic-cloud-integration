@@ -1,0 +1,18 @@
+{
+  "model_id": "ca612773-ee6e-4723-9297-c3c7702db384",
+  "experiment": "Simulation",
+  "inputs": {
+    "hhWasteRate": 0.081,
+    "fsWasteRate": 0.082,
+    "rdWasteRate": 0.012,
+    "pmWasteRate": 0.012,
+    "ppWasteRate": 0.006,
+    "exPost1FLW": 0.39,
+    "exPost2FLW": 0.29
+  },
+"outputs": [
+    "FLW",
+    "Total FLW avoided (kg)",
+    "Number of actions implemented"
+  ]
+}

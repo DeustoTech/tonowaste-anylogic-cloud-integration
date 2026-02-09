@@ -1,0 +1,28 @@
+# --- Git ---
+.git
+.gitignore
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+
+# --- Environment & Secrets ---
+# Evita que tu clave API real se filtre dentro de la imagen de Docker
+.env
+*.env.*
+
+# --- Local Documentation & Tools ---
+.vscode/
+.idea/
+README.md
+.dockerignore
+
+# --- Data & Logs ---
+outputs/*.csv
+outputs/*.json
+*.log

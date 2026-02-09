@@ -1,0 +1,13 @@
+#Orchestration file used to run the containerized application alongside other services (like monitoring) in a local or production environment.
+
+version: '3.8'
+
+services:
+  tonowaste-api:
+    build: .
+    container_name: tonowaste_api_service
+    ports:
+      - "8000:8000"
+    environment:
+      - ANYLOGIC_API_KEY=${ANYLOGIC_API_KEY}
+    restart: always
