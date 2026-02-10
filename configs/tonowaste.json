@@ -1,5 +1,4 @@
 {
-  "model_id": "ca612773-ee6e-4723-9297-c3c7702db384",
   "experiment": "Simulation",
   "inputs": {
     "hhWasteRate": 0.081,

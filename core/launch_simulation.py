@@ -122,8 +122,13 @@ def main():
         return
 
     # 2. Conexión y Configuración
+    model_id = config.get("model_id") or os.getenv("ANYLOGIC_MODEL_ID")
+    if not model_id:
+        print("ERROR: model_id no definido en config ni en ANYLOGIC_MODEL_ID")
+        return
+
     client = setup_cloud_client()
-    inputs, _ = get_model_inputs(client, config["model_id"], config.get("experiment", "Simulation"))
+    inputs, _ = get_model_inputs(client, model_id, config.get("experiment", "Simulation"))
     inputs = configure_parameters(inputs, config.get("inputs", {}))
 
     # 3. Ejecución

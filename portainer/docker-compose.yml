@@ -1,0 +1,38 @@
+networks:
+  traefik-proxy_web:
+    external: true
+
+services:
+  tonowaste-anylogic-cloud-integration:
+    image: ${REGISTRY_NS}/tonowaste-anylogic-cloud-integration:${IMAGE_TAG}
+    container_name: tonowaste_anylogic_cloud_integration
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ANYLOGIC_API_KEY=${ANYLOGIC_API_KEY}
+      - ANYLOGIC_MODEL_ID=${ANYLOGIC_MODEL_ID}
+      - DEFAULT_CONFIG=${DEFAULT_CONFIG:-tonowaste.json}
+      - UVICORN_WORKERS=${UVICORN_WORKERS:-1}
+      - UVICORN_LOG_LEVEL=${UVICORN_LOG_LEVEL:-info}
+    networks:
+      - traefik-proxy_web
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-proxy_web"
+      - "traefik.http.routers.tonowaste-sd.rule=Host(`api.sd.tools.tonowaste.eu`)"
+      - "traefik.http.routers.tonowaste-sd.entrypoints=websecure"
+      - "traefik.http.routers.tonowaste-sd.tls=true"
+      - "traefik.http.routers.tonowaste-sd.tls.certresolver=myresolver"
+      - "traefik.http.services.tonowaste-sd.loadbalancer.server.port=8000"

@@ -6,9 +6,13 @@ import os
 output_dir = os.path.join("..", "outputs")
 os.makedirs(output_dir, exist_ok=True)
 
+model_id = os.getenv("ANYLOGIC_MODEL_ID")
+if not model_id:
+    raise ValueError("ANYLOGIC_MODEL_ID no definido en variables de entorno")
+
 url = "http://localhost:8000/simulate"
 payload = {
-    "model_id": "ca612773-ee6e-4723-9297-c3c7702db384",
+    "model_id": model_id,
     "experiment": "Simulation",
     "inputs": {
         "hhWasteRate": 0.2196, "fsWasteRate": 0.2156, "rdWasteRate": 0.0292,

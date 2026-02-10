@@ -32,3 +32,4 @@ Thumbs.db
 # --- Config Backups ---
 configs/* (Copy).json
 configs/*.bak
+portainer/stack.env

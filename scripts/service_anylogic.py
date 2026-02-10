@@ -29,7 +29,7 @@ class TonoWasteInputs(BaseModel):
 
 
 class SimulationRequest(BaseModel):
-    model_id: str = "ca612773-ee6e-4723-9297-c3c7702db384"
+    model_id: str | None = None
     experiment: str = "Simulation"
     inputs: TonoWasteInputs
 
@@ -41,13 +41,22 @@ async def simulate(data: SimulationRequest):
     try:
         # Extraemos los datos del modelo Pydantic
         input_dict = data.inputs.model_dump() # En Pydantic v2 es model_dump()
+        model_id = data.model_id or os.getenv("ANYLOGIC_MODEL_ID")
+
+        if not model_id:
+            raise HTTPException(
+                status_code=400,
+                detail="model_id no enviado y ANYLOGIC_MODEL_ID no definido en entorno"
+            )
         
         result = wrapper.run_simulation(
-            model_id=data.model_id, 
+            model_id=model_id, 
             params=input_dict, 
             experiment_name=data.experiment
         )
         return {"status": "success", "results": result}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
