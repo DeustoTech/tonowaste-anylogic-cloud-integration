@@ -122,4 +122,4 @@ curl -X POST http://localhost:8000/simulate \
   }'
 ```
 
-If `model_id` is not sent in request, the API uses `ANYLOGIC_MODEL_ID`.
+The API always uses `ANYLOGIC_MODEL_ID` from environment.
