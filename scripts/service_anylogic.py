@@ -1,24 +1,27 @@
-"""
-It defines the TONOWASTE data schemas (using Pydantic) and exposes the simulate endpoint. 
-It acts as the interface between the HTTP requests and the anylogic_wrapper.
-"""
+"""Expose the TONOWASTE AnyLogic Cloud model through a FastAPI service."""
+
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from typing import Annotated
+
 from dotenv import load_dotenv
+from fastapi import Body, FastAPI, HTTPException
+from pydantic import BaseModel
+
 from core.anylogic_wrapper import AnyLogicWrapper
 
-# Cargar variables de entorno (API KEY)
+
 load_dotenv()
 
 app = FastAPI(
     title="TONOWASTE AnyLogic API",
-    description="Lightweight wrapper for AnyLogic Cloud simulations",
-    version="1.0.0"
+    description="Run TONOWASTE simulations hosted in AnyLogic Cloud",
+    version="2.0.0",
 )
 
-# Reutilizamos tus esquemas de Pydantic
+
 class TonoWasteInputs(BaseModel):
+    """Inputs accepted by the original simulation endpoint."""
+
     hhWasteRate: float = 0.2196
     fsWasteRate: float = 0.2156
     rdWasteRate: float = 0.0292
@@ -28,37 +31,94 @@ class TonoWasteInputs(BaseModel):
     exPost2FLW: float = 0.29
 
 
+class TonoWasteInputsV2(TonoWasteInputs):
+    """Original inputs plus the average daily consumption value."""
+
+    AverageDailyConsumption: float
+
+
 class SimulationRequest(BaseModel):
+    """Request body for the original simulation endpoint."""
+
     experiment: str = "Simulation"
     inputs: TonoWasteInputs
 
-# Inicializamos el wrapper una sola vez
+
+class SimulationRequestV2(BaseModel):
+    """Request body for the second simulation endpoint."""
+
+    experiment: str = "Simulation"
+    inputs: TonoWasteInputsV2
+
+
+SIMULATION_V2_EXAMPLES = {
+    "default": {
+        "summary": "TONOWASTE simulation with average daily consumption",
+        "value": {
+            "experiment": "Simulation",
+            "inputs": {
+                "hhWasteRate": 0.2196,
+                "fsWasteRate": 0.2156,
+                "rdWasteRate": 0.0292,
+                "pmWasteRate": 0.4594,
+                "ppWasteRate": 0.24,
+                "exPost1FLW": 0.39,
+                "exPost2FLW": 0.29,
+                "AverageDailyConsumption": 1.563,
+            },
+        },
+    }
+}
+
+
 wrapper = AnyLogicWrapper()
+
+
+def run_simulation(data: SimulationRequest | SimulationRequestV2):
+    """Run a validated API request against the configured Cloud model."""
+    model_id = os.getenv("ANYLOGIC_MODEL_ID")
+    if not model_id:
+        raise HTTPException(
+            status_code=400,
+            detail="ANYLOGIC_MODEL_ID is not set",
+        )
+
+    result = wrapper.run_simulation(
+        model_id=model_id,
+        params=data.inputs.model_dump(),
+        experiment_name=data.experiment,
+    )
+    return {"status": "success", "results": result}
+
 
 @app.post("/simulate")
 async def simulate(data: SimulationRequest):
+    """Run a simulation with the original input contract."""
     try:
-        # Extraemos los datos del modelo Pydantic
-        input_dict = data.inputs.model_dump() # En Pydantic v2 es model_dump()
-        model_id = os.getenv("ANYLOGIC_MODEL_ID")
-
-        if not model_id:
-            raise HTTPException(
-                status_code=400,
-                detail="ANYLOGIC_MODEL_ID no definido en entorno"
-            )
-        
-        result = wrapper.run_simulation(
-            model_id=model_id, 
-            params=input_dict, 
-            experiment_name=data.experiment
-        )
-        return {"status": "success", "results": result}
+        return run_simulation(data)
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/simulate2")
+async def simulate2(
+    data: Annotated[
+        SimulationRequestV2,
+        Body(openapi_examples=SIMULATION_V2_EXAMPLES),
+    ],
+):
+    """Run a simulation that includes average daily consumption."""
+    try:
+        return run_simulation(data)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
 
 @app.get("/health")
 def health_check():
+    """Report whether the API process is running."""
     return {"status": "ok"}

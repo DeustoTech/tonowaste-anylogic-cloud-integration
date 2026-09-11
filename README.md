@@ -1,109 +1,64 @@
-# TONOWASTE AnyLogic Cloud API Service
+# TONOWASTE AnyLogic Cloud API
 
-FastAPI service that runs AnyLogic Cloud simulations and exposes them through REST endpoints.
+Version 2.0.0. Last updated on September 11, 2026.
 
-## Project files
+This project provides a small FastAPI service for running the TONOWASTE model in
+AnyLogic Cloud. It keeps the AnyLogic API key and model ID on the server, so API
+clients only need to send the simulation inputs.
 
-- `docker-compose.yml`: local deployment.
-- `portainer/docker-compose.yml`: Portainer stack template with Traefik labels.
-- `portainer/stack.env.template`: Portainer environment variable template.
-- `build/build_and_push.sh`: build and push image script.
-- `scripts/service_anylogic.py`: API app (`/simulate`, `/health`).
+## API endpoints
 
-## 1. Deploy in local (Docker Compose)
+- `GET /health` checks whether the service is running.
+- `POST /simulate` runs the original input contract.
+- `POST /simulate2` runs the same simulation and also requires
+  `AverageDailyConsumption`.
+- `GET /docs` opens the interactive API documentation.
 
-1. Create local env file:
+The service always uses the latest version of the model identified by
+`ANYLOGIC_MODEL_ID`. If the requested experiment does not exist in that version,
+the service uses the model's default inputs.
+
+## Run the service locally
+
+Create `.env` from the template if you do not already have one:
 
 ```bash
 cp .env.template .env
 ```
 
-2. Fill required variables in `.env`:
+Set at least these two values:
 
 ```env
 ANYLOGIC_API_KEY=your_real_api_key
 ANYLOGIC_MODEL_ID=your_model_id
 ```
 
-3. Build and start:
+Do not commit `.env`. It contains credentials that must remain private.
+
+Build and start the service:
 
 ```bash
 docker compose up -d --build
 ```
 
-4. Validate:
+Check that it is healthy:
 
 ```bash
 docker compose ps
 curl http://localhost:8000/health
 ```
 
-5. Open docs:
+The health endpoint should return:
 
-- `http://localhost:8000/docs`
-
-## 2. Build and push image to Docker Hub
-
-Use the script:
-
-```bash
-./build/build_and_push.sh
+```json
+{"status":"ok"}
 ```
 
-Required `.env` variables for this script:
+Open `http://localhost:8000/docs` to test the endpoints from your browser.
 
-```env
-IMAGE_NAME=tonowaste-anylogic-cloud-integration
-IMAGE_TAG=1.0.1beta
-REGISTRY_NS=your_dockerhub_user_or_org
-REGISTRY_USERNAME=your_dockerhub_user
-REGISTRY_PASSWORD=your_dockerhub_token_or_password
-```
+## Run a simulation
 
-The script:
-
-1. Builds image locally.
-2. Logs in to registry.
-3. Tags image as `${REGISTRY_NS}/${IMAGE_NAME}:${IMAGE_TAG}`.
-4. Pushes the image.
-
-## 3. Deploy in Portainer
-
-Use:
-
-- Stack file: `portainer/docker-compose.yml`
-- Env template: `portainer/stack.env.template`
-
-### Required in Portainer environment
-
-```env
-REGISTRY_NS=your_dockerhub_user_or_org
-IMAGE_TAG=1.0.1beta
-ANYLOGIC_API_KEY=your_real_api_key
-ANYLOGIC_MODEL_ID=your_model_id
-DEFAULT_CONFIG=tonowaste.json
-UVICORN_WORKERS=1
-UVICORN_LOG_LEVEL=info
-```
-
-### Notes
-
-- `traefik-proxy_web` must exist as an external Docker network in that host.
-- Traefik route is configured for:
-  - `https://api.sd.tools.tonowaste.eu`
-- Internal service port is `8000`.
-
-### Portainer deployment steps
-
-1. Go to `Stacks` -> `Add stack`.
-2. Paste `portainer/docker-compose.yml`.
-3. Add environment variables from `portainer/stack.env.template` with real values.
-4. Deploy stack.
-5. Verify:
-   - `https://api.sd.tools.tonowaste.eu/health`
-   - `https://api.sd.tools.tonowaste.eu/docs`
-
-## API quick test
+Use `/simulate` for clients that use the original contract:
 
 ```bash
 curl -X POST http://localhost:8000/simulate \
@@ -115,11 +70,112 @@ curl -X POST http://localhost:8000/simulate \
       "fsWasteRate": 0.2156,
       "rdWasteRate": 0.0292,
       "pmWasteRate": 0.4595,
-      "ppWasteRate": 0.2400,
+      "ppWasteRate": 0.24,
       "exPost1FLW": 0.39,
       "exPost2FLW": 0.29
     }
   }'
 ```
 
-The API always uses `ANYLOGIC_MODEL_ID` from environment.
+Use `/simulate2` when the client can provide average daily consumption:
+
+```bash
+curl -X POST http://localhost:8000/simulate2 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "experiment": "Simulation",
+    "inputs": {
+      "hhWasteRate": 0.2196,
+      "fsWasteRate": 0.2156,
+      "rdWasteRate": 0.0292,
+      "pmWasteRate": 0.4594,
+      "ppWasteRate": 0.24,
+      "exPost1FLW": 0.39,
+      "exPost2FLW": 0.29,
+      "AverageDailyConsumption": 1.563
+    }
+  }'
+```
+
+`AverageDailyConsumption` is required by `/simulate2`. FastAPI returns HTTP 422
+when it is missing or is not a number. Swagger preloads the example with a value
+of `1.563`, but clients must still include the field in their requests.
+
+## Test the model from the command line
+
+The repository includes two small development tools:
+
+```bash
+python core/inspect_model.py
+python core/launch_simulation.py configs/tonowaste.json
+```
+
+`inspect_model.py` lists the inputs and outputs exposed by the latest model
+version. `launch_simulation.py` runs a simulation directly, without starting the
+FastAPI service.
+
+To test the running API and create CSV files from its time-series outputs, run:
+
+```bash
+python core/test_local_api.py
+```
+
+## Configuration
+
+The local service reads these settings from `.env`:
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `ANYLOGIC_API_KEY` | Authenticates requests to AnyLogic Cloud. | Required |
+| `ANYLOGIC_MODEL_ID` | Selects the AnyLogic Cloud model. | Required |
+| `DEFAULT_CONFIG` | Selects a file from `configs/`. | `tonowaste.json` |
+| `API_PORT` | Publishes the service on the host. | `8000` |
+| `UVICORN_WORKERS` | Sets the number of API worker processes. | `1` |
+| `UVICORN_LOG_LEVEL` | Sets the API log level. | `info` |
+
+The remaining registry variables are only needed when publishing a Docker image.
+
+## Build and publish the Docker image
+
+Set the registry values in `.env`:
+
+```env
+IMAGE_NAME=tonowaste-anylogic-cloud-integration
+IMAGE_TAG=1.0.1beta
+REGISTRY_NS=your_dockerhub_user_or_org
+REGISTRY_USERNAME=your_dockerhub_user
+REGISTRY_PASSWORD=your_dockerhub_token_or_password
+```
+
+Then run:
+
+```bash
+./build/build_and_push.sh
+```
+
+The script builds the image, signs in to the registry, tags the image, and pushes
+it to the configured namespace.
+
+## Deploy with Portainer
+
+Use `portainer/docker-compose.yml` as the stack definition and copy the values
+from `portainer/stack.env.template` into the Portainer environment settings.
+
+The deployment expects an existing external Docker network named
+`traefik-proxy_web`. Its Traefik labels publish the service at
+`https://api.sd.tools.tonowaste.eu`.
+
+After deploying, check:
+
+- `https://api.sd.tools.tonowaste.eu/health`
+- `https://api.sd.tools.tonowaste.eu/docs`
+
+## Main project files
+
+- `scripts/service_anylogic.py` defines the FastAPI schemas and endpoints.
+- `core/anylogic_wrapper.py` communicates with AnyLogic Cloud.
+- `core/launch_simulation.py` runs a model directly from a JSON configuration.
+- `core/inspect_model.py` shows the inputs and outputs available in Cloud.
+- `core/test_local_api.py` tests the local API and saves selected results as CSV.
+- `docker-compose.yml` runs the service locally.
+- `portainer/docker-compose.yml` defines the production stack.

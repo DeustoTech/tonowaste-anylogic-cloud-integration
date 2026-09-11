@@ -1,68 +1,75 @@
+"""Call the local API and save selected time-series results as CSV files."""
+
+import csv
+from itertools import zip_longest
+from pathlib import Path
+
 import requests
-import pandas as pd
-import os
 
-# 1. Configuración de rutas
-output_dir = os.path.join("..", "outputs")
-os.makedirs(output_dir, exist_ok=True)
 
-model_id = os.getenv("ANYLOGIC_MODEL_ID")
-if not model_id:
-    raise ValueError("ANYLOGIC_MODEL_ID no definido en variables de entorno")
+ROOT_DIR = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = ROOT_DIR / "outputs"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
-url = "http://localhost:8000/simulate"
+url = "http://localhost:8000/simulate2"
 payload = {
-    "model_id": model_id,
     "experiment": "Simulation",
     "inputs": {
-        "hhWasteRate": 0.2196, "fsWasteRate": 0.2156, "rdWasteRate": 0.0292,
-        "pmWasteRate": 0.4595, "ppWasteRate": 0.2400, "exPost1FLW": 0.39, "exPost2FLW": 0.29
-    }
+        "hhWasteRate": 0.2196,
+        "fsWasteRate": 0.2156,
+        "rdWasteRate": 0.0292,
+        "pmWasteRate": 0.4594,
+        "ppWasteRate": 0.24,
+        "exPost1FLW": 0.39,
+        "exPost2FLW": 0.29,
+        "AverageDailyConsumption": 1.563,
+    },
 }
 
-print("Solicitando simulación...")
+
+def save_columns(columns, filename):
+    """Write a dictionary of equally related series to one CSV file."""
+    if not columns:
+        return
+
+    path = OUTPUT_DIR / filename
+    headers = list(columns)
+    rows = zip_longest(*(columns[header] for header in headers), fillvalue="")
+
+    with path.open("w", newline="", encoding="utf-8") as output_file:
+        writer = csv.writer(output_file)
+        writer.writerow(headers)
+        writer.writerows(rows)
+
+    print(f"Created {path}")
+
+
+print("Requesting a simulation...")
 try:
-    response = requests.post(url, json=payload)
+    response = requests.post(url, json=payload, timeout=600)
     if response.status_code == 200:
         data = response.json().get("results", {})
-        
-        # Diccionarios para agrupar las columnas por categoría
         groups = {
-            "flw_comparison": pd.DataFrame(),
-            "fsc_share": pd.DataFrame()
+            "flw_comparison": {},
+            "fsc_share": {},
         }
 
         for key, content in data.items():
-            if isinstance(content, dict) and "dataX" in content:
-                # 1. Grupo: FLW Generated vs Avoided
-                if "flw_generated_and_flw_avoided" in key:
-                    col_name = key.split("|")[-1].upper() # FLW, TOTAL_FLW_AVOIDED, etc.
-                    if groups["flw_comparison"].empty:
-                        groups["flw_comparison"]["Day"] = content["dataX"]
-                    groups["flw_comparison"][col_name] = content["dataY"]
+            if not isinstance(content, dict) or "dataX" not in content:
+                continue
 
-                # 2. Grupo: Share across FSC
-                elif "share_of_flw_generated" in key:
-                    col_name = key.split("|")[-1].capitalize() # Production, Household, etc.
-                    if groups["fsc_share"].empty:
-                        groups["fsc_share"]["Day"] = content["dataX"]
-                    groups["fsc_share"][col_name] = content["dataY"]
+            if "flw_generated_and_flw_avoided" in key:
+                column_name = key.split("|")[-1].upper()
+                groups["flw_comparison"].setdefault("Day", content["dataX"])
+                groups["flw_comparison"][column_name] = content["dataY"]
+            elif "share_of_flw_generated" in key:
+                column_name = key.split("|")[-1].capitalize()
+                groups["fsc_share"].setdefault("Day", content["dataX"])
+                groups["fsc_share"][column_name] = content["dataY"]
 
-        # 3. Guardar solo los archivos consolidados
-        if not groups["flw_comparison"].empty:
-            path = os.path.join(output_dir, "resultado_flw_generado_vs_evitado.csv")
-            groups["flw_comparison"].to_csv(path, index=False)
-            print(f"Generado: {path}")
-
-        if not groups["fsc_share"].empty:
-            path = os.path.join(output_dir, "resultado_fsc_share_por_etapa.csv")
-            groups["fsc_share"].to_csv(path, index=False)
-            print(f"Generado: {path}")
-
-        # Limpieza: Si quieres borrar los archivos viejos "dataset_..." manualmente, 
-        # este script ya no los genera.
-        
+        save_columns(groups["flw_comparison"], "flw_generated_vs_avoided.csv")
+        save_columns(groups["fsc_share"], "flw_share_by_stage.csv")
     else:
-        print(f"Error API: {response.status_code}")
-except Exception as e:
-    print(f"Error: {e}")
+        print(f"The API returned HTTP {response.status_code}: {response.text}")
+except requests.RequestException as exc:
+    print(f"The request failed: {exc}")

@@ -7,7 +7,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "ERROR: ${ENV_FILE} no existe. Crea .env desde .env.template."
+  echo "ERROR: ${ENV_FILE} does not exist. Create .env from .env.template."
   exit 1
 fi
 
@@ -25,7 +25,7 @@ required_vars=(
 
 for var_name in "${required_vars[@]}"; do
   if [[ -z "${!var_name:-}" ]]; then
-    echo "ERROR: La variable ${var_name} no está definida en .env"
+    echo "ERROR: ${var_name} is not set in .env"
     exit 1
   fi
 done
